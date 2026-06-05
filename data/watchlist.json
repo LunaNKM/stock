@@ -1,0 +1,100 @@
+[
+  {
+    "symbol": "VOO",
+    "name": "S&P500 ETF",
+    "category": "core",
+    "market": "US",
+    "note": "미국 대표 500개 기업에 한 번에 투자 — 가장 무난한 시작"
+  },
+  {
+    "symbol": "QQQ",
+    "name": "나스닥100 ETF",
+    "category": "core",
+    "market": "US",
+    "note": "애플·엔비디아 등 미국 기술주 100개 묶음"
+  },
+  {
+    "symbol": "SCHD",
+    "name": "미국 배당 ETF",
+    "category": "core",
+    "market": "US",
+    "note": "꾸준히 배당 주는 미국 우량주 모음 — 변동성 낮은 편"
+  },
+  {
+    "symbol": "069500.KS",
+    "name": "KODEX 200",
+    "category": "core",
+    "market": "KR",
+    "note": "삼성전자 등 한국 대표 200개 기업 묶음"
+  },
+  {
+    "symbol": "360750.KS",
+    "name": "TIGER 미국S&P500",
+    "category": "core",
+    "market": "KR",
+    "note": "한국 상장 S&P500 — 원화로 미국시장에 간편 투자"
+  },
+  {
+    "symbol": "AAPL",
+    "name": "애플",
+    "category": "satellite",
+    "market": "US",
+    "note": "아이폰의 그 회사 — 미국 시가총액 최상위"
+  },
+  {
+    "symbol": "MSFT",
+    "name": "마이크로소프트",
+    "category": "satellite",
+    "market": "US",
+    "note": "윈도우·클라우드·AI 투자 선두"
+  },
+  {
+    "symbol": "NVDA",
+    "name": "엔비디아",
+    "category": "satellite",
+    "market": "US",
+    "note": "AI 반도체 대장주 — 성장성 높지만 변동성 큼"
+  },
+  {
+    "symbol": "GOOGL",
+    "name": "알파벳(구글)",
+    "category": "satellite",
+    "market": "US",
+    "note": "검색·유튜브·AI를 가진 빅테크"
+  },
+  {
+    "symbol": "AMZN",
+    "name": "아마존",
+    "category": "satellite",
+    "market": "US",
+    "note": "전자상거래 + 클라우드(AWS) 1위"
+  },
+  {
+    "symbol": "005930.KS",
+    "name": "삼성전자",
+    "category": "satellite",
+    "market": "KR",
+    "note": "한국 대표 기업 — 반도체 대장주"
+  },
+  {
+    "symbol": "000660.KS",
+    "name": "SK하이닉스",
+    "category": "satellite",
+    "market": "KR",
+    "note": "메모리 반도체 — AI 메모리(HBM) 수혜주"
+  },
+  {
+    "symbol": "035420.KS",
+    "name": "NAVER",
+    "category": "satellite",
+    "market": "KR",
+    "note": "한국 검색·커머스 플랫폼 대표주"
+  },
+  {
+    "symbol": "005380.KS",
+    "name": "현대차",
+    "category": "satellite",
+    "market": "KR",
+    "note": "한국 자동차 대표주 — 배당·전기차"
+  }
+]
