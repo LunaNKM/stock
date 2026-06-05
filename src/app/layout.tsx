@@ -14,8 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "주식 추천 도우미",
-  description: "초보를 위한 한국+미국 주식 추천·점수화 도구 (코어-새틀라이트 전략)",
+  title: "초보 투자 점검 도구",
+  description: "관심종목을 점검하고 적립 전 위험, 원화 실질수익, 분산 상태를 확인하는 보조 도구",
 };
 
 export default function RootLayout({
@@ -25,7 +25,7 @@ export default function RootLayout({
 }>) {
   return (
     <html
-      lang="en"
+      lang="ko"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">

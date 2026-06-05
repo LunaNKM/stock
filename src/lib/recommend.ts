@@ -9,11 +9,13 @@ import { decomposeKrwReturn, type FxDecomp } from "./fx";
 import { inverseVolAllocation, type SizingOutput } from "./sizing";
 import {
   dataQuality,
+  decisionGate,
   fxHeadwind,
   realKrwAlpha,
   safetyMargin,
   scoreErrorProfile,
   type DataQuality,
+  type DecisionGate,
   type FxHeadwind,
   type RealKrwAlpha,
   type SafetyMargin,
@@ -30,6 +32,7 @@ export type PickInsights = {
     fxHeadwind: FxHeadwind | null;
     safetyMargin: SafetyMargin;
     dataQuality: DataQuality;
+    gate: DecisionGate;
   };
 };
 
@@ -82,15 +85,49 @@ function buildPick(
   if (s.maxDrawdown > -0.15) reasons.push("낙폭이 작아 안정적");
   if (s.volatility > 0.4) reasons.push("변동성 큼 — 비중 작게");
   if (s.pos52 < 0.5) reasons.push("52주 범위 하단 — 가격 부담 적음");
-  else if (s.pos52 >= 0.95) reasons.push("52주 고점 부근 — 분할매수 권장");
+  else if (s.pos52 >= 0.95) reasons.push("52주 고점 부근 — 추격 검토 주의");
 
   let label: string, tone: Tone;
-  if (s.score >= 70) { label = "지금 분위기 좋음"; tone = "bull"; }
-  else if (s.score >= 50) { label = "무난 — 분할매수 고려"; tone = "neutral"; }
-  else if (s.score >= 35) { label = "관망"; tone = "neutral"; }
-  else { label = "약세 — 신중히"; tone = "bear"; }
+  if (s.score >= 70) { label = "현재 조건 양호"; tone = "bull"; }
+  else if (s.score >= 50) { label = "중립 — 추가 확인 필요"; tone = "neutral"; }
+  else if (s.score >= 35) { label = "보류"; tone = "neutral"; }
+  else { label = "약세 또는 데이터 주의"; tone = "bear"; }
 
   const riskTag: Pick["riskTag"] = s.volatility <= 0.18 ? "안정" : s.volatility <= 0.3 ? "보통" : "높음";
+
+  const real = realKrwAlpha({
+    alpha,
+    reliability,
+    fx,
+    volatility: s.volatility,
+    maxDrawdown: s.maxDrawdown,
+  });
+  const scoreError = scoreErrorProfile(reliability);
+  const fxWind = fxHeadwind(fx);
+  const safety = safetyMargin({
+    pos52: s.pos52,
+    pos5y: s.pos5y,
+    rsi: s.rsi,
+    volatility: s.volatility,
+    fundamentals: fund,
+  });
+  const quality = dataQuality({
+    lastDate: dates[dates.length - 1] ?? null,
+    historyDays: closes.length,
+    fundamentals: fund,
+  });
+  const gate = decisionGate({
+    score: s.score,
+    category: c.category,
+    volatility: s.volatility,
+    rsi: s.rsi,
+    pos52: s.pos52,
+    realKrwAlpha: real,
+    scoreError,
+    safetyMargin: safety,
+    dataQuality: quality,
+    fundamentals: fund,
+  });
 
   return {
     ...c,
@@ -107,27 +144,12 @@ function buildPick(
     fundamentals: fund,
     fx,
     insights: {
-      realKrwAlpha: realKrwAlpha({
-        alpha,
-        reliability,
-        fx,
-        volatility: s.volatility,
-        maxDrawdown: s.maxDrawdown,
-      }),
-      scoreError: scoreErrorProfile(reliability),
-      fxHeadwind: fxHeadwind(fx),
-      safetyMargin: safetyMargin({
-        pos52: s.pos52,
-        pos5y: s.pos5y,
-        rsi: s.rsi,
-        volatility: s.volatility,
-        fundamentals: fund,
-      }),
-      dataQuality: dataQuality({
-        lastDate: dates[dates.length - 1] ?? null,
-        historyDays: closes.length,
-        fundamentals: fund,
-      }),
+      realKrwAlpha: real,
+      scoreError,
+      fxHeadwind: fxWind,
+      safetyMargin: safety,
+      dataQuality: quality,
+      gate,
     },
   };
 }

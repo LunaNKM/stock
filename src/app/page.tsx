@@ -46,6 +46,13 @@ type Insights = {
   fxHeadwind: { contribution: number; label: string; tone: "good" | "neutral" | "bad" } | null;
   safetyMargin: { score: number; label: string; room: number };
   dataQuality: { lastDate: string | null; staleDays: number | null; historyDays: number; fundamentalsCoverage: number; label: string };
+  gate: {
+    status: "review" | "small" | "hold" | "block";
+    label: string;
+    tone: "good" | "caution" | "bad" | "neutral";
+    reasons: string[];
+    checklist: string[];
+  };
 };
 type Pick = {
   symbol: string;
@@ -155,8 +162,8 @@ export default function RecommendPage() {
     <main className="mx-auto max-w-5xl px-5 py-8">
       <header className="mb-4 flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">⭐ 오늘의 추천</h1>
-          <p className="text-sm text-zinc-500">종목별 ‘분위기 점수’로 <b>이번 달 적립 강도</b>를 가늠해 보세요 (타이밍 맞히기 ❌)</p>
+          <h1 className="text-2xl font-bold">오늘의 점검</h1>
+          <p className="text-sm text-zinc-500">관심종목을 바로 사기 전에 <b>검토 가능/소액만/보류/차단</b> 상태로 걸러보세요.</p>
         </div>
         <button
           onClick={load}
@@ -167,20 +174,27 @@ export default function RecommendPage() {
         </button>
       </header>
 
-      <HelpBox title="이 추천은 어떻게 나온 거예요? (꼭 읽어보세요)" defaultOpen>
+      <section className="mb-4 rounded-xl border border-zinc-200 bg-zinc-50 p-4 text-sm text-zinc-700 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300">
+        <b>이 화면은 매수 추천이 아니라 점검 도구입니다.</b>
+        <p className="mt-1">
+          점수가 높아도 최종 점검이 보류/차단이면 사지 않는 쪽으로 해석하세요. 실제 주문 전에는 증권사 앱의 현재가, 호가, 공시, 실적 일정을 다시 확인해야 합니다.
+        </p>
+      </section>
+
+      <HelpBox title="이 점검은 어떻게 나온 거예요? (꼭 읽어보세요)" defaultOpen>
         <p>
-          미래 가격은 아무도 못 맞혀요. 이 점수는 <b>과거·현재 데이터로 계산한 ‘분위기 점수’</b>(0~100)
-          일 뿐이에요. <b>타이밍을 맞히는 용도가 아니라</b>, 적립식 투자에서 “이번 달은 분위기가 좋으니
-          평소만큼 / 약하니 조금만”처럼 <b>적립 강도를 조절</b>하는 참고용입니다. 책임은 본인에게 있어요.
+          미래 가격은 아무도 못 맞혀요. 이 점수는 <b>과거·현재 데이터로 계산한 점검 점수</b>(0~100)
+          일 뿐이에요. <b>타이밍을 맞히는 용도가 아니라</b>, 적립식 투자에서 “이번 달은 조건이 괜찮으니
+          평소만큼 / 확인할 게 많으니 조금만”처럼 <b>적립 강도를 조절</b>하는 참고용입니다. 책임은 본인에게 있어요.
         </p>
         <p>점수는 아래 4가지를 종합해서 매겨요 (총 100점):</p>
         <Define term="추세 (30)">가격이 평균선들 위에 있어 오르는 흐름인가</Define>
         <Define term="모멘텀 (20)">오르는 힘(MACD)이 있고, 너무 과열(RSI)되진 않았나</Define>
         <Define term="안정성 (25)">덜 출렁이고(변동성), 크게 안 빠졌나(낙폭)</Define>
-        <Define term="가격 위치/밸류 (25)">1년·5년 가격대에서 ‘싼 자리’인가 (고점 추격 억제)</Define>
+        <Define term="가격 위치/밸류 (25)">1년·5년 가격대에서 가격 부담이 큰 구간은 아닌가 (고점 추격 억제)</Define>
         <p className="text-zinc-500">
-          💡 점수 70↑ = 분위기 좋음 · 50~69 = 무난 · 50 미만 = 관망/약세. 위험등급(안정·보통·높음)은
-          변동성으로 매겨요. <b>🧪 점수 성적표·알파</b>로 “이 점수가 그냥 적립보다 나았는지”까지 보여줘요.
+          💡 점수 70↑ = 조건 양호 · 50~69 = 추가 확인 필요 · 50 미만 = 보류/주의. 위험등급(안정·보통·높음)은
+          변동성으로 매겨요. 최종 행동은 점수가 아니라 <b>최종 점검</b>과 체크리스트를 함께 보고 판단하세요.
         </p>
       </HelpBox>
 
@@ -208,7 +222,7 @@ export default function RecommendPage() {
               />
               <StarterCard
                 title={`새틀라이트 ${data.starter.satellitePct}% · ${won(data.starter.monthly * data.starter.satellitePct / 100)}`}
-                subtitle="점수 상위 개별주로 도전"
+                subtitle="게이트를 통과한 개별주만 소액 검토"
                 items={data.starter.satellite}
                 color="text-amber-700"
                 won0={won0}
@@ -258,6 +272,7 @@ export default function RecommendPage() {
                     {valuationStyle[p.fundamentals.valuation].label}
                   </span>
                 </div>
+                <DecisionGatePanel gate={p.insights.gate} />
 
                 <p className="mt-2 text-xs text-zinc-500">{p.note}</p>
 
@@ -272,6 +287,7 @@ export default function RecommendPage() {
                 <ReliabilityBadge r={p.reliability} />
                 <AlphaBadge a={p.alpha} />
                 <InsightPanel insights={p.insights} />
+                <PreTradeChecklist items={p.insights.gate.checklist} />
                 <FundamentalsRow f={p.fundamentals} />
                 <ValueRow pos52={p.metrics.pos52} pos5y={p.metrics.pos5y} />
                 {p.fx && <FxRow fx={p.fx} />}
@@ -415,6 +431,42 @@ function AlphaBadge({ a }: { a: Alpha }) {
 }
 
 /** 1년·5년 가격대에서의 위치 (싼 자리인지 밸류 프록시) */
+function DecisionGatePanel({ gate }: { gate: Insights["gate"] }) {
+  const toneClass =
+    gate.tone === "good" ? "border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-900/50 dark:bg-emerald-950/20 dark:text-emerald-300" :
+    gate.tone === "caution" ? "border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-900/50 dark:bg-amber-950/20 dark:text-amber-300" :
+    gate.tone === "bad" ? "border-rose-200 bg-rose-50 text-rose-800 dark:border-rose-900/50 dark:bg-rose-950/20 dark:text-rose-300" :
+    "border-zinc-200 bg-zinc-50 text-zinc-700 dark:border-zinc-800 dark:bg-zinc-800/50 dark:text-zinc-300";
+  return (
+    <div className={`mt-2 rounded-lg border px-3 py-2 text-xs ${toneClass}`}>
+      <div className="flex items-center justify-between gap-2">
+        <span className="font-semibold">최종 점검</span>
+        <b>{gate.label}</b>
+      </div>
+      {gate.reasons.length > 0 && (
+        <ul className="mt-1 space-y-0.5 text-[11px] opacity-90">
+          {gate.reasons.map((reason) => (
+            <li key={reason}>· {reason}</li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+function PreTradeChecklist({ items }: { items: string[] }) {
+  return (
+    <details className="mt-2 rounded-lg border border-zinc-200 px-3 py-2 text-[11px] text-zinc-600 dark:border-zinc-800 dark:text-zinc-300">
+      <summary className="cursor-pointer font-medium">매수 전 체크리스트</summary>
+      <ul className="mt-2 space-y-1">
+        {items.map((item) => (
+          <li key={item}>□ {item}</li>
+        ))}
+      </ul>
+    </details>
+  );
+}
+
 function InsightPanel({ insights }: { insights: Insights }) {
   const fxTone =
     insights.fxHeadwind?.tone === "good" ? "text-emerald-600" :

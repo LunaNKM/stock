@@ -4,10 +4,10 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const tabs = [
-  { href: "/", label: "오늘의 추천" },
-  { href: "/analysis", label: "종목 분석" },
-  { href: "/statistics", label: "위험 비교" },
-  { href: "/simulator", label: "시뮬레이터" },
+  { href: "/", label: "오늘의 점검" },
+  { href: "/analysis", label: "종목 체크" },
+  { href: "/statistics", label: "포트폴리오 위험" },
+  { href: "/simulator", label: "손실/적립 시뮬레이터" },
 ];
 
 export default function NavBar() {
@@ -15,7 +15,7 @@ export default function NavBar() {
   return (
     <nav className="border-b border-zinc-200 dark:border-zinc-800">
       <div className="mx-auto flex max-w-5xl items-center gap-1 px-5">
-        <span className="mr-3 py-3 font-bold">📈 Stock</span>
+        <span className="mr-3 py-3 font-bold">Stock Check</span>
         {tabs.map((t) => {
           const active = pathname === t.href;
           return (

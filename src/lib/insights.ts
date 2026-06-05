@@ -205,6 +205,95 @@ export type DataQuality = {
   label: string;
 };
 
+export type DecisionGate = {
+  status: "review" | "small" | "hold" | "block";
+  label: string;
+  tone: "good" | "caution" | "bad" | "neutral";
+  reasons: string[];
+  checklist: string[];
+};
+
+export function decisionGate(input: {
+  score: number;
+  category: "core" | "satellite";
+  volatility: number;
+  rsi: number | null;
+  pos52: number;
+  realKrwAlpha: RealKrwAlpha;
+  scoreError: ScoreErrorProfile;
+  safetyMargin: SafetyMargin;
+  dataQuality: DataQuality;
+  fundamentals: FundamentalView;
+}): DecisionGate {
+  const reasons: string[] = [];
+  let status: DecisionGate["status"] = "hold";
+
+  if (input.dataQuality.historyDays < 180 || input.dataQuality.fundamentalsCoverage < 0.15) {
+    reasons.push("판단에 필요한 가격/재무 데이터가 부족합니다.");
+    status = "block";
+  }
+  if (input.dataQuality.staleDays != null && input.dataQuality.staleDays > 7) {
+    reasons.push("시세 기준일이 오래되어 실제 주문 전 확인이 필요합니다.");
+    if (status !== "block") status = "hold";
+  }
+  if (input.scoreError.lossRate != null && input.scoreError.lossRate > 0.55) {
+    reasons.push("과거 고점수 구간의 오답률이 높았습니다.");
+    if (status !== "block") status = "hold";
+  }
+  if (input.realKrwAlpha.score < 35) {
+    reasons.push("세금/환율/위험을 반영한 원화 기준 매력이 낮습니다.");
+    if (status !== "block") status = "hold";
+  }
+  if (input.volatility > 0.55) {
+    reasons.push("변동성이 커서 소액 검토도 신중해야 합니다.");
+    if (status !== "block") status = "hold";
+  }
+  if (input.rsi != null && input.rsi >= 75 && input.pos52 >= 0.9) {
+    reasons.push("단기 과열과 52주 고점권이 겹쳐 추격 검토를 보류합니다.");
+    if (status !== "block") status = "hold";
+  }
+  if (input.category === "satellite" && input.fundamentals.valuation === "rich" && input.safetyMargin.score < 40) {
+    reasons.push("개별주인데 고평가와 낮은 가격 여유가 함께 나타납니다.");
+    if (status !== "block") status = "hold";
+  }
+
+  if (status !== "block" && reasons.length === 0) {
+    if (input.score >= 70 && input.realKrwAlpha.score >= 55 && input.safetyMargin.score >= 45) {
+      status = input.category === "core" ? "review" : "small";
+    } else if (input.score >= 50 && input.realKrwAlpha.score >= 40) {
+      status = "small";
+    } else {
+      status = "hold";
+      reasons.push("점수나 원화 실질 지표가 강하지 않아 기다리는 쪽이 낫습니다.");
+    }
+  }
+
+  const label =
+    status === "review" ? "검토 가능" :
+    status === "small" ? "소액만 검토" :
+    status === "block" ? "차단" :
+    "보류";
+  const tone =
+    status === "review" ? "good" :
+    status === "small" ? "caution" :
+    status === "block" ? "bad" :
+    "neutral";
+
+  return {
+    status,
+    label,
+    tone,
+    reasons: reasons.slice(0, 3),
+    checklist: [
+      "ETF 대신 이 종목을 사야 하는 이유를 한 문장으로 말할 수 있나요?",
+      "-20% 하락해도 팔지 않을 이유와 금액 한도를 정했나요?",
+      "전체 자산에서 이 종목과 같은 테마 비중이 과하지 않나요?",
+      "최근 실적, 공시, 다음 이벤트 일정을 확인했나요?",
+      "실제 주문 전 증권사 앱의 현재가와 호가를 다시 확인했나요?",
+    ],
+  };
+}
+
 export function dataQuality(input: {
   lastDate: string | null;
   historyDays: number;
